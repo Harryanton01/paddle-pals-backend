@@ -1,0 +1,46 @@
+// server/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  email         String   @unique
+  password_hash String
+  username      String
+  avatarUrl     String?
+  elo           Int      @default(1200)
+  createdAt     DateTime @default(now())
+
+  // Relationships: A user can be a winner or a loser in many matches
+  matchesWon    Match[]  @relation("Winner")
+  matchesLost   Match[]  @relation("Loser")
+}
+
+model Match {
+  id          Int      @id @default(autoincrement())
+  playedAt    DateTime @default(now())
+  
+  // Relationships
+  winnerId    Int
+  winner      User     @relation("Winner", fields: [winnerId], references: [id])
+  
+  loserId     Int
+  loser       User     @relation("Loser", fields: [loserId], references: [id])
+  
+  winnerScore Int
+  loserScore  Int
+}
+
+// This table is required for "connect-pg-simple" to store login sessions
+model Session {
+  sid    String   @id @map("sid")
+  sess   Json     
+  expire DateTime 
+}
