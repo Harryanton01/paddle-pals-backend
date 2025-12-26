@@ -4,13 +4,13 @@ import { db } from "../config/db";
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const { email, password, username } = req.body;
+    const { password, username } = req.body;
 
-    if (!email || !password || !username) {
+    if (!password || !username) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    const user = await authService.registerUser({ email, password, username });
+    const user = await authService.registerUser({ password, username });
 
     res.status(201).json(user);
   } catch (error: any) {
@@ -24,23 +24,17 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
 
-    // 1. Validate credentials using the service
-    const user = await authService.validateUser(email, password);
+    const user = await authService.validateUser(username, password);
 
     if (!user) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    // 2. Set the Session (The Magic Moment)
-    // This automatically writes to the DB and sets the Cookie header
-    (req.session as any).userId = user.id;
+    req.session.userId = user.id;
 
-    res.json({
-      message: "Logged in successfully",
-      user: { id: user.id, username: user.username },
-    });
+    res.json({ id: user.id, username: user.username });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -51,26 +45,29 @@ export const getMe = async (req: Request, res: Response) => {
   try {
     const userId = (req.session as any).userId;
 
-    // Fetch fresh user data from DB (in case they changed their avatar/username)
     const user = await db.user.findUnique({
       where: { id: userId },
-      select: { id: true, username: true, email: true, elo: true }, // Select only what we need
+      select: {
+        id: true,
+        username: true,
+        gameRatings: true,
+        memberships: true,
+      },
     });
 
     if (!user) return res.status(401).json({ error: "User not found" });
 
-    res.json({ user });
+    res.json(user);
   } catch (error) {
     res.status(500).json({ error: "Server Error" });
   }
 };
 
-// 2. Logout
 export const logout = (req: Request, res: Response) => {
   req.session.destroy((err) => {
     if (err) return res.status(500).json({ error: "Could not log out" });
 
-    res.clearCookie("connect.sid"); // clear the cookie from browser
+    res.clearCookie("connect.sid");
     res.json({ message: "Logged out" });
   });
 };

@@ -7,15 +7,13 @@ import pgSession from "connect-pg-simple";
 import { db } from "./config/db";
 import authRoutes from "./routes/authRoutes";
 import matchRoutes from "./routes/matchRoutes";
-import userRoutes from "./routes/userRoutes";
+import groupRoutes from "./routes/groupRoutes";
 
 dotenv.config();
 
 const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
-
-const allowedOrigins = ["http://localhost:5173", process.env.FRONTEND_URL];
 
 app.use(
   cors({
@@ -26,21 +24,20 @@ app.use(
 
 app.use(express.json());
 
-// Session Configuration
 const Store = pgSession(session);
 
 app.use(
   session({
     store: new Store({
-      conString: process.env.DATABASE_URL, // Connects to our DB
-      createTableIfMissing: true, // Auto-creates the session table
+      conString: process.env.DATABASE_URL,
+      createTableIfMissing: true,
     }),
-    secret: process.env.SESSION_SECRET || "secret123", // Encrypts the cookie
+    secret: process.env.SESSION_SECRET || "secret123",
     resave: false,
     saveUninitialized: false,
     cookie: {
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 Days
-      httpOnly: true, // Prevents JS from reading the cookie (Security)
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+      httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     },
@@ -50,7 +47,7 @@ app.use(
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/matches", matchRoutes);
-app.use("/api/users", userRoutes);
+app.use("/api/groups", groupRoutes);
 
 app.get("/", (req, res) => {
   res.send("🏓 Ping Pong Tracker API is alive!");

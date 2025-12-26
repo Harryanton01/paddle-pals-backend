@@ -7,7 +7,7 @@ export const isAuthenticated = (
   next: NextFunction
 ) => {
   // Check if session exists and has a userId
-  if (req.session && (req.session as any).userId) {
+  if (req.session && req.session.userId) {
     return next();
   }
 

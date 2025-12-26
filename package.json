@@ -28,10 +28,12 @@
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "express-session": "^1.18.2",
+    "lodash": "^4.17.21",
     "pg": "^8.16.3",
     "prisma": "^5.10.0"
   },
   "devDependencies": {
+    "@types/lodash": "^4.17.21",
     "nodemon": "^3.1.11",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"

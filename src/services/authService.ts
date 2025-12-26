@@ -6,11 +6,11 @@ import { CreateUserDTO, UserResponse } from "../types/user.types";
 export const registerUser = async (
   data: CreateUserDTO
 ): Promise<UserResponse> => {
-  const { email, password, username } = data;
+  const { password, username } = data;
 
   // 1. Check if user already exists
   const existingUser = await db.user.findUnique({
-    where: { email },
+    where: { username },
   });
 
   if (existingUser) {
@@ -24,7 +24,6 @@ export const registerUser = async (
   // 3. Save to Database
   const newUser = await db.user.create({
     data: {
-      email,
       username,
       password_hash: hashedPassword,
     },
@@ -33,18 +32,17 @@ export const registerUser = async (
   // 4. Return user info (excluding password)
   return {
     id: newUser.id,
-    email: newUser.email,
     username: newUser.username,
   };
 };
 
 export const validateUser = async (
-  email: string,
+  username: string,
   password: string
 ): Promise<User | null> => {
   // 1. Find the user
   const user = await db.user.findUnique({
-    where: { email },
+    where: { username },
   });
 
   if (!user) return null;
