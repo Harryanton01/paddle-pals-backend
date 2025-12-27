@@ -34,8 +34,16 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const matchController = __importStar(require("../controllers/matchController"));
+const groupController = __importStar(require("../controllers/groupController"));
+const statsController = __importStar(require("../controllers/statsController"));
 const authMiddleware_1 = require("../middlewares/authMiddleware");
 const router = (0, express_1.Router)();
-router.post("/", authMiddleware_1.isAuthenticated, matchController.createMatch);
+router.get("/", authMiddleware_1.isAuthenticated, groupController.fetchGroups);
+router.post("/", authMiddleware_1.isAuthenticated, groupController.createGroup);
+router.get("/:id", authMiddleware_1.isAuthenticated, groupController.fetchGroup);
+router.post("/join", authMiddleware_1.isAuthenticated, groupController.joinGroup);
+router.post("/game", authMiddleware_1.isAuthenticated, groupController.createGame);
+router.get("/:id/matches", authMiddleware_1.isAuthenticated, groupController.getGroupMatches);
+router.get("/:id/stats", authMiddleware_1.isAuthenticated, statsController.getGameStats);
+router.get("/:id/stats/me", authMiddleware_1.isAuthenticated, statsController.getMyGameStats);
 exports.default = router;

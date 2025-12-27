@@ -47,11 +47,11 @@ const authService = __importStar(require("../services/authService"));
 const db_1 = require("../config/db");
 const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { email, password, username } = req.body;
-        if (!email || !password || !username) {
+        const { password, username } = req.body;
+        if (!password || !username) {
             return res.status(400).json({ error: "Missing required fields" });
         }
-        const user = yield authService.registerUser({ email, password, username });
+        const user = yield authService.registerUser({ password, username });
         res.status(201).json(user);
     }
     catch (error) {
@@ -65,19 +65,13 @@ const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 exports.register = register;
 const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { email, password } = req.body;
-        // 1. Validate credentials using the service
-        const user = yield authService.validateUser(email, password);
+        const { username, password } = req.body;
+        const user = yield authService.validateUser(username, password);
         if (!user) {
             return res.status(401).json({ error: "Invalid credentials" });
         }
-        // 2. Set the Session (The Magic Moment)
-        // This automatically writes to the DB and sets the Cookie header
         req.session.userId = user.id;
-        res.json({
-            message: "Logged in successfully",
-            user: { id: user.id, username: user.username },
-        });
+        res.json({ id: user.id, username: user.username });
     }
     catch (error) {
         console.error(error);
@@ -88,26 +82,29 @@ exports.login = login;
 const getMe = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const userId = req.session.userId;
-        // Fetch fresh user data from DB (in case they changed their avatar/username)
         const user = yield db_1.db.user.findUnique({
             where: { id: userId },
-            select: { id: true, username: true, email: true, elo: true }, // Select only what we need
+            select: {
+                id: true,
+                username: true,
+                gameRatings: true,
+                memberships: true,
+            },
         });
         if (!user)
             return res.status(401).json({ error: "User not found" });
-        res.json({ user });
+        res.json(user);
     }
     catch (error) {
         res.status(500).json({ error: "Server Error" });
     }
 });
 exports.getMe = getMe;
-// 2. Logout
 const logout = (req, res) => {
     req.session.destroy((err) => {
         if (err)
             return res.status(500).json({ error: "Could not log out" });
-        res.clearCookie("connect.sid"); // clear the cookie from browser
+        res.clearCookie("connect.sid");
         res.json({ message: "Logged out" });
     });
 };

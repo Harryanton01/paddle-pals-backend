@@ -21,44 +21,36 @@ const connect_pg_simple_1 = __importDefault(require("connect-pg-simple"));
 const db_1 = require("./config/db");
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const matchRoutes_1 = __importDefault(require("./routes/matchRoutes"));
-const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
+const groupRoutes_1 = __importDefault(require("./routes/groupRoutes"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
+app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
-const allowedOrigins = ["http://localhost:5173", process.env.FRONTEND_URL];
 app.use((0, cors_1.default)({
-    origin: (origin, callback) => {
-        if (!origin)
-            return callback(null, true);
-        if (allowedOrigins.indexOf(origin) === -1) {
-            return callback(null, origin);
-        }
-        return callback(null, true);
-    },
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
     credentials: true,
 }));
 app.use(express_1.default.json());
-// Session Configuration
 const Store = (0, connect_pg_simple_1.default)(express_session_1.default);
 app.use((0, express_session_1.default)({
     store: new Store({
-        conString: process.env.DATABASE_URL, // Connects to our DB
-        createTableIfMissing: true, // Auto-creates the session table
+        conString: process.env.DATABASE_URL,
+        createTableIfMissing: true,
     }),
-    secret: process.env.SESSION_SECRET || "secret123", // Encrypts the cookie
+    secret: process.env.SESSION_SECRET || "secret123",
     resave: false,
     saveUninitialized: false,
     cookie: {
-        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 Days
-        httpOnly: true, // Prevents JS from reading the cookie (Security)
-        secure: false, // Set to TRUE if you use HTTPS (Production)
-        sameSite: "lax", // Needed for localhost dev
+        maxAge: 1000 * 60 * 60 * 24 * 7,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     },
 }));
 // Routes
 app.use("/api/auth", authRoutes_1.default);
 app.use("/api/matches", matchRoutes_1.default);
-app.use("/api/users", userRoutes_1.default);
+app.use("/api/groups", groupRoutes_1.default);
 app.get("/", (req, res) => {
     res.send("🏓 Ping Pong Tracker API is alive!");
 });

@@ -16,10 +16,10 @@ exports.validateUser = exports.registerUser = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const db_1 = require("../config/db");
 const registerUser = (data) => __awaiter(void 0, void 0, void 0, function* () {
-    const { email, password, username } = data;
+    const { password, username } = data;
     // 1. Check if user already exists
     const existingUser = yield db_1.db.user.findUnique({
-        where: { email },
+        where: { username },
     });
     if (existingUser) {
         throw new Error("User already exists");
@@ -30,7 +30,6 @@ const registerUser = (data) => __awaiter(void 0, void 0, void 0, function* () {
     // 3. Save to Database
     const newUser = yield db_1.db.user.create({
         data: {
-            email,
             username,
             password_hash: hashedPassword,
         },
@@ -38,15 +37,14 @@ const registerUser = (data) => __awaiter(void 0, void 0, void 0, function* () {
     // 4. Return user info (excluding password)
     return {
         id: newUser.id,
-        email: newUser.email,
         username: newUser.username,
     };
 });
 exports.registerUser = registerUser;
-const validateUser = (email, password) => __awaiter(void 0, void 0, void 0, function* () {
+const validateUser = (username, password) => __awaiter(void 0, void 0, void 0, function* () {
     // 1. Find the user
     const user = yield db_1.db.user.findUnique({
-        where: { email },
+        where: { username },
     });
     if (!user)
         return null;
