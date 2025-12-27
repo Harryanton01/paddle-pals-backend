@@ -117,10 +117,6 @@ export async function fetchGroup(req: Request, res: Response) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    if (!(await isGroupMember(userId, groupId))) {
-      return res.status(403).json({ error: "Unauthorized" });
-    }
-
     const group = await db.group.findUnique({
       where: { id: groupId },
       include: {
@@ -140,6 +136,10 @@ export async function fetchGroup(req: Request, res: Response) {
 
     if (!group) {
       return res.status(404).json({ error: "Group not found" });
+    }
+
+    if (!(await isGroupMember(userId, groupId))) {
+      return res.status(403).json({ error: "Unauthorized" });
     }
 
     res.json(group);
