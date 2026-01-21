@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum MatchResult {
+  TEAM_A_WIN
+  TEAM_B_WIN
+  DRAW
+}
+
+enum MatchStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum GroupRole {
+  ADMIN
+  MEMBER
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  username      String   @unique
+  password_hash String
+  createdAt     DateTime @default(now())
+
+  memberships    GroupMember[]
+  gameRatings    GameRating[]
+  matchesAsTeamA Match[]       @relation("TeamA")
+  matchesAsTeamB Match[]       @relation("TeamB")
+  createdMatches Match[]       @relation("MatchCreator")
+}
+
+model Group {
+  id         Int      @id @default(autoincrement())
+  name       String
+  inviteCode String   @unique
+  createdAt  DateTime @default(now())
+
+  members GroupMember[]
+  games   Game[]
+}
+
+model GroupMember {
+  id       Int       @id @default(autoincrement())
+  userId   Int
+  groupId  Int
+  role     GroupRole @default(MEMBER)
+  joinedAt DateTime  @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  group Group @relation(fields: [groupId], references: [id])
+
+  @@unique([userId, groupId])
+}
+
+model Game {
+  id        Int      @id @default(autoincrement())
+  name      String
+  groupId   Int
+  createdAt DateTime @default(now())
+
+  group Group @relation(fields: [groupId], references: [id])
+
+  matches Match[]
+  ratings GameRating[]
+
+  @@unique([groupId, name]) // Prevent duplicate game names in one group
+}
+
+model GameRating {
+  id     Int @id @default(autoincrement())
+  userId Int
+  gameId Int
+  elo    Int @default(1200)
+
+  wins   Int @default(0)
+  losses Int @default(0)
+  draws  Int @default(0)
+
+  user User @relation(fields: [userId], references: [id])
+  game Game @relation(fields: [gameId], references: [id])
+
+  @@unique([userId, gameId])
+}
+
+model Match {
+  id       Int      @id @default(autoincrement())
+  playedAt DateTime @default(now())
+
+  status MatchStatus @default(PENDING)
+
+  createdById Int
+  createdBy   User @relation("MatchCreator", fields: [createdById], references: [id])
+
+  gameId Int
+  game   Game @relation(fields: [gameId], references: [id])
+
+  teamA User[] @relation("TeamA")
+  teamB User[] @relation("TeamB")
+
+  scoreA Int?
+  scoreB Int?
+
+  result MatchResult
+}

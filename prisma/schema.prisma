@@ -1,10 +1,10 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
 }
 
 enum MatchResult {
@@ -13,26 +13,36 @@ enum MatchResult {
   DRAW
 }
 
+enum MatchStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum GroupRole {
+  ADMIN
+  MEMBER
+}
+
 model User {
   id            Int      @id @default(autoincrement())
   username      String   @unique
   password_hash String
   createdAt     DateTime @default(now())
 
-  // Relationships
   memberships   GroupMember[]
   gameRatings   GameRating[]
   matchesAsTeamA Match[] @relation("TeamA")
   matchesAsTeamB Match[] @relation("TeamB")
+  createdMatches Match[] @relation("MatchCreator")
 }
 
 model Group {
   id          Int      @id @default(autoincrement())
   name        String
-  inviteCode  String   @unique // The code used to join
+  inviteCode  String   @unique
   createdAt   DateTime @default(now())
 
-  // Relationships
   members     GroupMember[]
   games       Game[]
 }
@@ -41,7 +51,7 @@ model GroupMember {
   id        Int      @id @default(autoincrement())
   userId    Int
   groupId   Int
-  role      String   @default("MEMBER") // ADMIN, MEMBER
+  role      GroupRole   @default(MEMBER)
   joinedAt  DateTime @default(now())
 
   user      User     @relation(fields: [userId], references: [id])
@@ -58,7 +68,6 @@ model Game {
   
   group     Group    @relation(fields: [groupId], references: [id])
   
-  // Relationships
   matches   Match[]
   ratings   GameRating[]
 
@@ -84,8 +93,12 @@ model GameRating {
 model Match {
   id        Int      @id @default(autoincrement())
   playedAt  DateTime @default(now())
+
+  status    MatchStatus @default(PENDING)
+
+  createdById Int
+  createdBy   User @relation("MatchCreator", fields: [createdById], references: [id])
   
-  // Relations
   gameId    Int
   game      Game     @relation(fields: [gameId], references: [id])
 
@@ -96,10 +109,4 @@ model Match {
   scoreB    Int?
 
   result    MatchResult
-}
-
-model Session {
-  sid    String   @id @map("sid")
-  sess   Json
-  expire DateTime
 }
